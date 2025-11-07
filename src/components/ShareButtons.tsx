@@ -4,13 +4,13 @@ export default function ShareButtons() {
   const [copied, setCopied] = useState(false)
 
   const shareUrl = typeof window !== 'undefined' ? window.location.href : ''
-  const shareText = 'Sign the petition to support Zion Church Beijing — Stand for religious freedom'
+  const shareText = 'Sign the petition to support religious freedom'
 
   const handleShare = async () => {
     if (navigator.share) {
       try {
         await navigator.share({
-          title: 'Petition: Free Zion Church Beijing',
+          title: 'Petition for Religious Freedom',
           text: shareText,
           url: shareUrl,
         })
