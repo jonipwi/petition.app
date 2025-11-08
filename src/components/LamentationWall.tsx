@@ -133,19 +133,36 @@ export default function LamentationWall() {
     }
   };
 
-  const handlePetition = (prayer: Prayer) => {
+  const handlePetition = async (prayer: Prayer) => {
     if (status !== 'authenticated') {
       // User not logged in, prompt to sign in
       signIn('github');
     } else {
-      // User is logged in, redirect to create petition page with prayer context
-      // Store prayer context in sessionStorage for the petition page to use
-      sessionStorage.setItem('petitionContext', JSON.stringify({
-        prayerId: prayer.id,
-        prayerText: prayer.text,
-        prayerType: prayer.type,
-      }));
-      window.location.href = '/petition';
+      // User is logged in, create petition automatically
+      try {
+        const title = `Petition for: ${prayer.text.substring(0, 100)}${prayer.text.length > 100 ? '...' : ''}`;
+        
+        const res = await fetch(`${API_BASE}/api/create-petition-from-prayer`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            prayer_id: prayer.id,
+            title: title,
+          }),
+        });
+
+        if (res.ok) {
+          const data = await res.json();
+          // Redirect to the petition page with the generated link_id
+          window.location.href = `/petition?id=${data.link_id}`;
+        } else {
+          const text = await res.text();
+          alert(`Failed to create petition: ${text}`);
+        }
+      } catch (error) {
+        console.error('Create petition error:', error);
+        alert('Failed to create petition. Please try again.');
+      }
     }
   };
 

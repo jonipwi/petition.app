@@ -2,56 +2,47 @@ import { useState, useEffect } from 'react'
 import Head from 'next/head'
 import Link from 'next/link'
 import { useSession } from 'next-auth/react'
+import { useRouter } from 'next/router'
 import PetitionForm from '@/components/PetitionForm'
 import SignatureCounter from '@/components/SignatureCounter'
 import ShareButtons from '@/components/ShareButtons'
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:8090'
-const PETITION_ID = process.env.NEXT_PUBLIC_PETITION_ID || 'default'
 
 interface PetitionData {
   title: string
   description: string
 }
 
-interface PrayerContext {
-  prayerId: number
-  prayerText: string
-  prayerType: string
-}
-
 export default function PetitionPage() {
   const { data: session } = useSession()
+  const router = useRouter()
   const [signatureCount, setSignatureCount] = useState<number>(0)
   const [loading, setLoading] = useState(true)
   const [petitionData, setPetitionData] = useState<PetitionData | null>(null)
   const [petitionLoading, setPetitionLoading] = useState(true)
-  const [prayerContext, setPrayerContext] = useState<PrayerContext | null>(null)
+  const [petitionId, setPetitionId] = useState<string>('default')
 
   useEffect(() => {
-    // Check for prayer context from sessionStorage
-    const contextStr = sessionStorage.getItem('petitionContext')
-    if (contextStr) {
-      try {
-        const context = JSON.parse(contextStr)
-        setPrayerContext(context)
-        // Clear it after reading
-        sessionStorage.removeItem('petitionContext')
-      } catch (e) {
-        console.error('Failed to parse prayer context:', e)
-      }
-    }
+    // Get petition ID from query string or use default
+    const id = router.query.id as string || 'default'
+    setPetitionId(id)
+  }, [router.query.id])
 
-    fetchPetitionData()
-    fetchCount()
-    // Refresh count every 20 seconds
-    const interval = setInterval(fetchCount, 20000)
-    return () => clearInterval(interval)
-  }, [])
+  useEffect(() => {
+    if (petitionId) {
+      fetchPetitionData()
+      fetchCount()
+      // Refresh count every 20 seconds
+      const interval = setInterval(fetchCount, 20000)
+      return () => clearInterval(interval)
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [petitionId])
 
   const fetchPetitionData = async () => {
     try {
-      const res = await fetch(`${API_BASE}/api/${PETITION_ID}/info`)
+      const res = await fetch(`${API_BASE}/api/${petitionId}/info`)
       if (res.ok) {
         const data = await res.json()
         setPetitionData(data)
@@ -65,7 +56,7 @@ export default function PetitionPage() {
 
   const fetchCount = async () => {
     try {
-      const res = await fetch(`${API_BASE}/api/${PETITION_ID}/count`)
+      const res = await fetch(`${API_BASE}/api/${petitionId}/count`)
       if (res.ok) {
         const data = await res.json()
         setSignatureCount(data.count)
@@ -128,45 +119,20 @@ export default function PetitionPage() {
         </div>
 
         <div className="max-w-2xl w-full bg-white rounded-xl shadow-lg p-6 md:p-8">
-          {/* Prayer Context Banner */}
-          {prayerContext && (
-            <div className="mb-6 p-4 bg-gradient-to-r from-blue-50 to-purple-50 border-l-4 border-blue-600 rounded-lg">
-              <div className="flex items-start gap-3">
-                <div className="text-2xl">🙏</div>
-                <div className="flex-1">
-                  <h3 className="font-semibold text-blue-900 mb-2">Creating Petition from Prayer</h3>
-                  <p className="text-sm text-blue-800 italic mb-2 font-serif leading-relaxed">
-                    &ldquo;{prayerContext.prayerText}&rdquo;
-                  </p>
-                  <p className="text-xs text-blue-700">
-                    Type: <span className="font-semibold capitalize">{prayerContext.prayerType}</span>
-                  </p>
-                </div>
-              </div>
-              <div className="mt-3 text-sm text-blue-900">
-                ℹ️ This petition will be associated with the prayer above. People who sign this petition 
-                will be supporting this specific prayer request.
-              </div>
-            </div>
-          )}
-
           <header className="mb-6">
             <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-3">
-              {prayerContext ? 'Create Petition for Prayer' : petitionData.title}
+              {petitionData.title}
             </h1>
             <p className="text-gray-700 text-lg leading-relaxed">
-              {prayerContext 
-                ? 'Fill out the form below to create a formal petition that others can sign in support of this prayer.'
-                : petitionData.description
-              }
+              {petitionData.description}
             </p>
           </header>
 
-          {!prayerContext && <SignatureCounter count={signatureCount} loading={loading} />}
+          <SignatureCounter count={signatureCount} loading={loading} />
 
           <PetitionForm 
             apiBase={API_BASE} 
-            petitionId={PETITION_ID}
+            petitionId={petitionId}
             onSuccess={handleSignatureSuccess}
           />
 
