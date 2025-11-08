@@ -21,13 +21,15 @@ export default function PetitionPage() {
   const [loading, setLoading] = useState(true)
   const [petitionData, setPetitionData] = useState<PetitionData | null>(null)
   const [petitionLoading, setPetitionLoading] = useState(true)
-  const [petitionId, setPetitionId] = useState<string>('default')
+  const [petitionId, setPetitionId] = useState<string>('')
 
   useEffect(() => {
     // Get petition ID from query string or use default
-    const id = router.query.id as string || 'default'
-    setPetitionId(id)
-  }, [router.query.id])
+    if (router.isReady) {
+      const id = router.query.id as string || 'default'
+      setPetitionId(id)
+    }
+  }, [router.isReady, router.query.id])
 
   useEffect(() => {
     if (petitionId) {
@@ -41,11 +43,15 @@ export default function PetitionPage() {
   }, [petitionId])
 
   const fetchPetitionData = async () => {
+    console.log('Fetching petition data for:', petitionId)
     try {
       const res = await fetch(`${API_BASE}/api/${petitionId}/info`)
       if (res.ok) {
         const data = await res.json()
         setPetitionData(data)
+        console.log('Petition data loaded:', data)
+      } else {
+        console.error('Failed to fetch petition data:', res.status)
       }
     } catch (error) {
       console.error('Failed to fetch petition data:', error)
@@ -55,11 +61,15 @@ export default function PetitionPage() {
   }
 
   const fetchCount = async () => {
+    console.log('Fetching count for petition:', petitionId)
     try {
       const res = await fetch(`${API_BASE}/api/${petitionId}/count`)
       if (res.ok) {
         const data = await res.json()
+        console.log('Count data:', data)
         setSignatureCount(data.count)
+      } else {
+        console.error('Failed to fetch count:', res.status)
       }
     } catch (error) {
       console.error('Failed to fetch count:', error)
