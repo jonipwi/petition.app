@@ -2,6 +2,9 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useSession, signIn, signOut } from 'next-auth/react';
+import { useTranslation } from 'next-i18next';
+import { useRouter } from 'next/router';
+import LanguageSelector from './LanguageSelector';
 
 interface Prayer {
   id: number;
@@ -23,6 +26,9 @@ const API_BASE = process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:8091';
 
 export default function LamentationWall() {
   const { data: session, status } = useSession();
+  const { t } = useTranslation('common');
+  const router = useRouter();
+  const isRTL = router.locale === 'he' || router.locale === 'ar';
   const [prayers, setPrayers] = useState<Prayer[]>([]);
   const [stats, setStats] = useState<PrayerStats | null>(null);
   const [loading, setLoading] = useState(false);
@@ -41,7 +47,8 @@ export default function LamentationWall() {
   const loadPrayers = async () => {
     setLoading(true);
     try {
-      const url = `${API_BASE}/api/prayers?limit=50&type=${filter}`;
+      const lang = router.locale || 'en';
+      const url = `${API_BASE}/api/prayers?limit=50&type=${filter}&lang=${lang}`;
       const res = await fetch(url);
       if (res.ok) {
         const data = await res.json();
@@ -70,7 +77,7 @@ export default function LamentationWall() {
     loadPrayers();
     loadStats();
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filter]);
+  }, [filter, router.locale]);
 
   const handleSubmitPrayer = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -91,7 +98,7 @@ export default function LamentationWall() {
       });
 
       if (res.ok) {
-        setMessage('Your prayer has been laid upon the wall. 🕊️');
+        setMessage('prayerSubmitted');
         setPrayerText('');
         setAuthor('');
         setCountry('');
@@ -192,14 +199,19 @@ export default function LamentationWall() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-amber-50 via-stone-100 to-amber-50">
+    <div className="min-h-screen bg-gradient-to-b from-amber-50 via-stone-100 to-amber-50" dir={isRTL ? 'rtl' : 'ltr'}>
+      {/* Language Selector */}
+      <div className="fixed top-4 left-4 z-50">
+        <LanguageSelector />
+      </div>
+
       {/* GitHub Link */}
       <a
         href="https://github.com/jonipwi/petition.app"
         target="_blank"
         rel="noopener noreferrer"
-        className="fixed top-4 right-4 z-50 bg-white hover:bg-gray-100 text-gray-800 p-3 rounded-full shadow-lg transition-all transform hover:scale-110"
-        aria-label="View source on GitHub"
+        className={`fixed top-4 z-50 bg-white hover:bg-gray-100 text-gray-800 p-3 rounded-full shadow-lg transition-all transform hover:scale-110 ${isRTL ? 'left-20' : 'right-4'}`}
+        aria-label={t('viewOnGithub')}
       >
         <svg
           className="w-6 h-6"
@@ -216,9 +228,9 @@ export default function LamentationWall() {
         <div className="fixed inset-0 z-50 bg-black bg-opacity-80 flex items-center justify-center animate-fade-in">
           <div className="text-center text-white p-8 max-w-2xl">
             <p className="text-3xl font-serif mb-4 animate-pulse">
-              &ldquo;Cast all your cares upon Him, for He cares for you.&rdquo;
+              {t('burdenVerse')}
             </p>
-            <p className="text-xl opacity-75">1 Peter 5:7</p>
+            <p className="text-xl opacity-75">{t('burdenReference')}</p>
           </div>
         </div>
       )}
@@ -227,10 +239,10 @@ export default function LamentationWall() {
         {/* Header */}
         <header className="text-center mb-12">
           <h1 className="text-5xl font-serif text-stone-800 mb-4">
-            The Lamentation Wall
+            {t('title')}
           </h1>
           <p className="text-xl text-stone-600 mb-6 italic">
-            A sacred space to pour out your heart before God
+            {t('subtitle')}
           </p>
           
           {/* Stats */}
@@ -238,11 +250,11 @@ export default function LamentationWall() {
             <div className="flex justify-center gap-8 text-stone-700 mb-6">
               <div className="text-center">
                 <div className="text-3xl font-bold text-amber-700">{stats.total_prayers}</div>
-                <div className="text-sm">Prayers</div>
+                <div className="text-sm">{t('prayers')}</div>
               </div>
               <div className="text-center">
                 <div className="text-3xl font-bold text-amber-700">{stats.total_amens}</div>
-                <div className="text-sm">Amens</div>
+                <div className="text-sm">{t('amens')}</div>
               </div>
             </div>
           )}
@@ -253,7 +265,7 @@ export default function LamentationWall() {
               onClick={openBurdenMode}
               className="bg-amber-600 hover:bg-amber-700 text-white px-8 py-4 rounded-lg text-lg font-semibold shadow-lg transition-all transform hover:scale-105"
             >
-              🕊️ Lay Your Burden Down
+              {t('layBurdenDown')}
             </button>
           )}
         </header>
@@ -262,31 +274,31 @@ export default function LamentationWall() {
         {showForm && (
           <div className="max-w-2xl mx-auto mb-12 bg-white rounded-lg shadow-2xl p-8 border-4 border-amber-200 animate-fade-in">
             <h2 className="text-2xl font-serif text-stone-800 mb-6 text-center">
-              Place Your Prayer Upon the Wall
+              {t('placeYourPrayer')}
             </h2>
             
             <form onSubmit={handleSubmitPrayer}>
               {/* Prayer Type */}
               <div className="mb-4">
                 <label className="block text-stone-700 font-semibold mb-2">
-                  Type of Prayer
+                  {t('typeOfPrayer')}
                 </label>
                 <select
                   value={prayerType}
                   onChange={(e) => setPrayerType(e.target.value)}
                   className="w-full px-4 py-2 border-2 border-stone-300 rounded-lg focus:border-amber-500 focus:outline-none"
                 >
-                  <option value="petition">🙏 Petition</option>
-                  <option value="thanksgiving">✨ Thanksgiving</option>
-                  <option value="lament">💧 Lament</option>
-                  <option value="intercession">🕊️ Intercession</option>
+                  <option value="petition">{t('petition')}</option>
+                  <option value="thanksgiving">{t('thanksgiving')}</option>
+                  <option value="lament">{t('lament')}</option>
+                  <option value="intercession">{t('intercession')}</option>
                 </select>
               </div>
 
               {/* Prayer Text */}
               <div className="mb-4">
                 <label className="block text-stone-700 font-semibold mb-2">
-                  Your Prayer <span className="text-red-500">*</span>
+                  {t('yourPrayer')} <span className="text-red-500">{t('required')}</span>
                 </label>
                 <textarea
                   value={prayerText}
@@ -294,11 +306,11 @@ export default function LamentationWall() {
                   required
                   maxLength={2000}
                   rows={6}
-                  placeholder="Pour out your heart before the Lord..."
+                  placeholder={t('pourOutYourHeart')}
                   className="w-full px-4 py-3 border-2 border-stone-300 rounded-lg focus:border-amber-500 focus:outline-none font-serif"
                 />
-                <div className="text-right text-sm text-stone-500 mt-1">
-                  {prayerText.length} / 2000
+                <div className={`text-sm text-stone-500 mt-1 ${isRTL ? 'text-left' : 'text-right'}`}>
+                  {prayerText.length} {t('charactersRemaining')}
                 </div>
               </div>
 
@@ -306,27 +318,27 @@ export default function LamentationWall() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                 <div>
                   <label className="block text-stone-700 mb-2">
-                    Name (optional)
+                    {t('nameOptional')}
                   </label>
                   <input
                     type="text"
                     value={author}
                     onChange={(e) => setAuthor(e.target.value)}
                     maxLength={100}
-                    placeholder="Anonymous"
+                    placeholder={t('anonymous')}
                     className="w-full px-4 py-2 border-2 border-stone-300 rounded-lg focus:border-amber-500 focus:outline-none"
                   />
                 </div>
                 <div>
                   <label className="block text-stone-700 mb-2">
-                    Country (optional)
+                    {t('countryOptional')}
                   </label>
                   <input
                     type="text"
                     value={country}
                     onChange={(e) => setCountry(e.target.value)}
                     maxLength={100}
-                    placeholder="Your location"
+                    placeholder={t('yourLocation')}
                     className="w-full px-4 py-2 border-2 border-stone-300 rounded-lg focus:border-amber-500 focus:outline-none"
                   />
                 </div>
@@ -342,7 +354,7 @@ export default function LamentationWall() {
                   disabled={submitting || !prayerText.trim()}
                   className="flex-1 bg-amber-600 hover:bg-amber-700 text-white px-6 py-3 rounded-lg font-semibold disabled:bg-stone-400 disabled:cursor-not-allowed transition-colors"
                 >
-                  {submitting ? 'Submitting...' : '🕊️ Place on Wall'}
+                  {submitting ? t('submitting') : t('placeOnWall')}
                 </button>
                 <button
                   type="button"
@@ -352,14 +364,14 @@ export default function LamentationWall() {
                   }}
                   className="px-6 py-3 border-2 border-stone-400 text-stone-700 rounded-lg hover:bg-stone-100 transition-colors"
                 >
-                  Cancel
+                  {t('cancel')}
                 </button>
               </div>
 
               {/* Message */}
               {message && (
                 <div className="mt-4 p-4 bg-amber-100 border-l-4 border-amber-600 text-stone-800">
-                  {message}
+                  {message === 'prayerSubmitted' ? t('prayerSubmitted') : message}
                 </div>
               )}
             </form>
@@ -378,7 +390,7 @@ export default function LamentationWall() {
                   : 'bg-white text-stone-700 hover:bg-stone-100 border-2 border-stone-300'
               }`}
             >
-              {type === 'all' ? '📿 All' : `${getPrayerTypeIcon(type)} ${type.charAt(0).toUpperCase() + type.slice(1)}`}
+              {type === 'all' ? t('all') : `${getPrayerTypeIcon(type)} ${t(type)}`}
             </button>
           ))}
         </div>
@@ -386,7 +398,7 @@ export default function LamentationWall() {
         {/* Prayer Wall */}
         {loading ? (
           <div className="text-center py-12">
-            <div className="text-stone-600">Loading prayers...</div>
+            <div className="text-stone-600">{t('loadingPrayers')}</div>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -433,7 +445,7 @@ export default function LamentationWall() {
                     className="flex-1 bg-white hover:bg-amber-100 text-stone-700 px-4 py-2 rounded-lg font-semibold transition-colors border-2 border-stone-300 flex items-center justify-center gap-2"
                   >
                     <span>🙏</span>
-                    <span>Amen</span>
+                    <span>{t('amen')}</span>
                     <span className="text-amber-700">({prayer.amen_count})</span>
                   </button>
                   
@@ -442,7 +454,7 @@ export default function LamentationWall() {
                     className="flex-1 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white px-4 py-2 rounded-lg font-semibold transition-all border-2 border-blue-600 flex items-center justify-center gap-2"
                   >
                     <span>📝</span>
-                    <span>Petition</span>
+                    <span>{t('createPetition').replace('📝 ', '')}</span>
                   </button>
                 </div>
               </div>
@@ -452,8 +464,8 @@ export default function LamentationWall() {
 
         {prayers.length === 0 && !loading && (
           <div className="text-center py-12 text-stone-600">
-            <p className="text-xl mb-4">No prayers yet on this wall.</p>
-            <p className="text-lg">Be the first to lay your burden down.</p>
+            <p className="text-xl mb-4">{t('noPrayers')}</p>
+            <p className="text-lg">{t('beFirst')}</p>
           </div>
         )}
       </div>

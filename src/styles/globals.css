@@ -17,3 +17,34 @@ body {
     )
     rgb(var(--background-start-rgb));
 }
+
+/* RTL Support */
+[dir="rtl"] {
+  direction: rtl;
+  text-align: right;
+}
+
+[dir="rtl"] .border-l-4 {
+  border-left-width: 0;
+  border-right-width: 4px;
+}
+
+[dir="rtl"] input,
+[dir="rtl"] textarea,
+[dir="rtl"] select {
+  text-align: right;
+}
+
+/* Ensure emojis and icons stay in the correct position */
+[dir="rtl"] .flex {
+  flex-direction: row;
+}
+
+/* Fix for specific RTL elements */
+[dir="rtl"] .text-left {
+  text-align: left;
+}
+
+[dir="rtl"] .text-right {
+  text-align: right;
+}

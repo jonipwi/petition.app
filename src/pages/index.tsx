@@ -1,6 +1,8 @@
 import React from 'react';
 import Head from 'next/head';
 import LamentationWall from '../components/LamentationWall';
+import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
+import { GetStaticProps } from 'next';
 
 export default function Home() {
   return (
@@ -18,3 +20,11 @@ export default function Home() {
     </>
   )
 }
+
+export const getStaticProps: GetStaticProps = async ({ locale }) => {
+  return {
+    props: {
+      ...(await serverSideTranslations(locale || 'en', ['common'])),
+    },
+  };
+};
