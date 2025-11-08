@@ -333,7 +333,7 @@ export default function LamentationWall() {
 
         {/* Filter Tabs */}
         <div className="flex justify-center gap-4 mb-8 flex-wrap">
-          {['all', 'petition', 'thanksgiving', 'lament', 'intercession'].map((type) => (
+          {['all', 'thanksgiving', 'lament', 'intercession'].map((type) => (
             <button
               key={type}
               onClick={() => setFilter(type)}
